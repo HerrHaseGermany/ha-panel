@@ -1,0 +1,33 @@
+#!/bin/sh
+
+config_root=${XDG_CONFIG_HOME:-"$HOME/.config"}
+url_file="$config_root/raspi-kiosk/url"
+
+if ! IFS= read -r kiosk_url < "$url_file" || [ -z "$kiosk_url" ]; then
+  exit 1
+fi
+
+until /usr/bin/curl \
+  --fail \
+  --silent \
+  --location \
+  --output /dev/null \
+  --connect-timeout 3 \
+  --max-time 10 \
+  "$kiosk_url"
+do
+  /usr/bin/sleep 3
+done
+
+exec /usr/bin/chromium \
+  --kiosk \
+  --no-first-run \
+  --noerrdialogs \
+  --password-store=basic \
+  --lang=de-DE \
+  --force-dark-mode \
+  --enable-features=WebContentsForceDark \
+  --disable-session-crashed-bubble \
+  --disable-features=Translate \
+  --autoplay-policy=no-user-gesture-required \
+  "$kiosk_url"
